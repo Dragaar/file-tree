@@ -14,6 +14,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FileTreeImpl implements FileTree {
+
+    int subDirectoriesIndex = 0; //рівень глубини наявної директорії
+
+    boolean isLocalElementLast = false;
+    boolean rootDirectory = true;
+    ArrayList<Boolean> isGlobalElementLast = new ArrayList<>();
+
+
     @Override
     public Optional<String> tree(Path path) {
 
@@ -21,6 +29,7 @@ public class FileTreeImpl implements FileTree {
         StringBuilder builder = new StringBuilder();
 
         if(Files.isDirectory(path)){ // якщо це директорія
+            isGlobalElementLast.add(false); //додатковий елемент для кореня
             walkByPath(path, builder);
            // System.out.println(builder.toString());
 
@@ -40,6 +49,58 @@ public class FileTreeImpl implements FileTree {
     }
 
     private void walkByPath(Path path, StringBuilder builder) {
+
+        try {
+            isGlobalElementLast.add(false);
+
+            List<Path> files;
+            List<Path> directories;
+            try (Stream<Path> walk = Files.walk(path, 1)) {
+                files = walk.filter(Files::isRegularFile)
+                        .collect(Collectors.toList());
+            }
+            try (Stream<Path> walk = Files.walk(path, 1)) {
+                directories = walk.filter(Files::isDirectory)
+                        .collect(Collectors.toList());
+            }
+            //System.out.println("directories " + directories);
+
+            for(int i = 0; i <= directories.size()-1; i++){
+                if(i == directories.size()-1){
+                    if(files.isEmpty()){
+                        isGlobalElementLast.set(subDirectoriesIndex, true);
+                        isLocalElementLast = true;}
+                }
+                if(rootDirectory){
+                    addPathTreeToBuilder(builder, directories.get(i), subDirectoriesIndex, isGlobalElementLast, isLocalElementLast);
+                    subDirectoriesIndex++;
+                    rootDirectory = false;
+                }
+                if(i>0) {
+                    addPathTreeToBuilder(builder, directories.get(i), subDirectoriesIndex, isGlobalElementLast, isLocalElementLast);
+                    isLocalElementLast = false;
+                    subDirectoriesIndex++;
+                    walkByPath(directories.get(i), builder);
+                }
+            }
+            for(int i = 0; i <= files.size()-1; i++){
+                if(i == files.size()-1){
+                        //isGlobalElementLast.set(subDirectoriesIndex-1, true);
+                        isLocalElementLast = true;
+                }
+                addPathTreeToBuilder(builder, files.get(i), subDirectoriesIndex, isGlobalElementLast, isLocalElementLast);
+                isLocalElementLast = false;
+            }
+            if(subDirectoriesIndex == 0)  isGlobalElementLast.set(subDirectoriesIndex, false);
+            else isGlobalElementLast.set(subDirectoriesIndex-1, false);
+            subDirectoriesIndex--;
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /*  private void walkByPath2(Path path, StringBuilder builder) {
         //https://habr.com/ru/post/437694/
         try {
             Files.walkFileTree(path, new FileVisitor<Path>() {
@@ -48,6 +109,7 @@ public class FileTreeImpl implements FileTree {
 
                 boolean isElementLast = false;
                ArrayList<Boolean> isDirectoryLast = new ArrayList<>();
+
                 @Override
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
 
@@ -92,8 +154,7 @@ public class FileTreeImpl implements FileTree {
         catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
+    }*/
     private int countElementsInDirectory(Path path){
         try(Stream<Path> pathStream = Files.walk(path, 1)){
             return (int)pathStream.count()-1;
