@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -56,12 +57,15 @@ public class FileTreeImpl implements FileTree {
             List<Path> directories;
             try (Stream<Path> walk = Files.walk(path, 1)) {
                 files = walk.filter(Files::isRegularFile)
+                        .sorted()
                         .collect(Collectors.toList());
             }
             try (Stream<Path> walk = Files.walk(path, 1)) {
                 directories = walk.filter(Files::isDirectory)
+                        .sorted()
                         .collect(Collectors.toList());
             }
+
             //System.out.println("directories " + directories);
 
             for(int i = 0; i <= directories.size()-1; i++){
@@ -171,6 +175,7 @@ public class FileTreeImpl implements FileTree {
         }
         return null;
     }
+
 
     //https://www.baeldung.com/java-folder-size
     private int getRealSize(Path path){
