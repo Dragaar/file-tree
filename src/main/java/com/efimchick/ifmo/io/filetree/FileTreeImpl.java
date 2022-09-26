@@ -43,6 +43,7 @@ public class FileTreeImpl implements FileTree {
         //https://habr.com/ru/post/437694/
         try {
             Files.walkFileTree(path, new FileVisitor<Path>() {
+
                 int subDirectoriesIndex = 0; //рівень глубини наявної директорії
 
                 boolean isElementLast = false;
@@ -51,8 +52,6 @@ public class FileTreeImpl implements FileTree {
                 public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
 
                     isDirectoryLast.add(false);
-                    //if(dir.equals(getLastFileInParentDirectory(dir))) isElementLast = true;
-                    //addPathTreeToBuilder(builder, dir, subDirectoriesIndex, isElementLast);
 
                     if(dir.equals(getLastFileInParentDirectory(dir))){
                         isDirectoryLast.set(subDirectoriesIndex, true);
@@ -69,7 +68,6 @@ public class FileTreeImpl implements FileTree {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 
-                    //System.out.println("getLastFileInParentDirectory "+ getLastFileInParentDirectory(file));
                     if(file.equals(getLastFileInParentDirectory(file))) isElementLast = true;
                     addPathTreeToBuilder(builder, file, subDirectoriesIndex, isDirectoryLast, isElementLast);
 
@@ -150,7 +148,7 @@ public class FileTreeImpl implements FileTree {
                 else builder.append("│  ");
             }
             if(!isElementLast) builder.append("├─ ");
-            else builder.append("└─  ");
+            else builder.append("└─ ");
         }
         builder.append(path.getFileName() + " " + getRealSize(path) + " bytes\n");
     }
