@@ -31,20 +31,19 @@ public class FileTreeImpl implements FileTree {
         if(Files.isDirectory(path)){ // якщо це директорія
             isGlobalElementLast.add(false); //додатковий елемент для кореня
             walkByPath(path, builder);
-           // System.out.println(builder.toString());
 
         } else { // якщо це файл
             walkByPath(path, builder);
             System.out.println(builder.toString());
         }
 
-
-            try(BufferedWriter bfwriter = new BufferedWriter(new FileWriter("E:\\Work\\Dev\\EPAM\\Secnd\\Project\\Streams-IO\\TestFiles\\res.txt")))
+        // Виведення результату в файл для перевірки
+          /*  try(BufferedWriter bfwriter = new BufferedWriter(new FileWriter("E:\\Work\\Dev\\EPAM\\Secnd\\Project\\Streams-IO\\TestFiles\\res.txt")))
             {
                 bfwriter.write(builder.toString());
             } catch (IOException e){
                 e.printStackTrace();
-            }
+            }*/
         return Optional.of(builder.toString());
     }
 
