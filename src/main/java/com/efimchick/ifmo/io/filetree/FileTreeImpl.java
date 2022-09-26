@@ -3,14 +3,14 @@ package com.efimchick.ifmo.io.filetree;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FileTreeImpl implements FileTree {
@@ -38,28 +38,7 @@ public class FileTreeImpl implements FileTree {
             }
         return Optional.of(builder.toString());
     }
-    private void walkByPath2(Path path, StringBuilder builder){
-        int maxDepth = 5;
-        int coursorSubDirectories = 0;
-        try (Stream<Path> pathStream = Files.walk(path, maxDepth)) {
-            pathStream.forEach(path1 -> {
-                try {
-                    if(Files.isDirectory(path1)){
-                        builder.append(path1.getFileName() + " " + Files.size(path1) + " bytes \n");
-                    }
-                    else {
-                        if(path1.getRoot() == null) builder.append("└─"); else builder.append("├─");
-                        builder.append(path1.getFileName() + " " + Files.size(path1) + " bytes \n");
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
 
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
     private void walkByPath(Path path, StringBuilder builder) {
         //https://habr.com/ru/post/437694/
         try {
@@ -135,15 +114,44 @@ public class FileTreeImpl implements FileTree {
         return null;
     }
 
+    //https://www.baeldung.com/java-folder-size
+    private int getRealSize(Path path){
+        try{
+            long r = Files.walk(path)
+                    .filter(p -> p.toFile().isFile())
+                    .mapToLong(p -> p.toFile().length())
+                    .sum();
+            return (int)r;
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+        return 0;
+       //інша робоча реалізація
+       /* AtomicLong size = new AtomicLong(0);
+        try{
+            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                size.addAndGet(attrs.size());
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+        return size.intValue();*/
+    }
+
     private void addPathTreeToBuilder(StringBuilder builder, Path path, int subDirectoriesIndex, ArrayList<Boolean> isDirectoryLast, boolean isElementLast) throws IOException{
         if(subDirectoriesIndex>0)  {
             for(int i = 1; i < subDirectoriesIndex; i++) {
                 if(isDirectoryLast.get(i)) builder.append("   ");
                 else builder.append("│  ");
             }
-            if(!isElementLast) builder.append("├─  ");
+            if(!isElementLast) builder.append("├─ ");
             else builder.append("└─  ");
         }
-        builder.append(path.getFileName() + " " + Files.size(path) + " bytes \n");
+        builder.append(path.getFileName() + " " + getRealSize(path) + " bytes\n");
     }
 }
