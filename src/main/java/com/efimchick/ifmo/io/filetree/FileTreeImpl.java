@@ -1,14 +1,12 @@
 package com.efimchick.ifmo.io.filetree;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -21,7 +19,6 @@ public class FileTreeImpl implements FileTree {
     boolean isLocalElementLast = false;
     boolean rootDirectory = true;
     ArrayList<Boolean> isGlobalElementLast = new ArrayList<>();
-
 
     @Override
     public Optional<String> tree(Path path) {
@@ -57,15 +54,23 @@ public class FileTreeImpl implements FileTree {
             List<Path> directories;
             try (Stream<Path> walk = Files.walk(path, 1)) {
                 files = walk.filter(Files::isRegularFile)
-                        .sorted()
+                        .sorted(customComparator)
                         .collect(Collectors.toList());
             }
             try (Stream<Path> walk = Files.walk(path, 1)) {
                 directories = walk.filter(Files::isDirectory)
-                        .sorted()
+                        //.sorted(customComparator)
                         .collect(Collectors.toList());
             }
-
+            if(!directories.isEmpty()) {
+                    ArrayList<Path> temp = new ArrayList<>(directories);
+                    temp.remove(0);
+                    temp.sort(customComparator);
+                    temp.add(0, directories.get(0));
+                    directories = new ArrayList<>(temp);
+            }
+            //Collections.sort(files, customComparator);
+            //Collections.sort(directories, customComparator);
             //System.out.println("directories " + directories);
 
             for(int i = 0; i <= directories.size()-1; i++){
@@ -102,6 +107,15 @@ public class FileTreeImpl implements FileTree {
             e.printStackTrace();
         }
     }
+
+    Comparator<Path> customComparator = new Comparator<Path>() {
+        @Override
+        public int compare(Path o1, Path o2) {
+            System.out.println("o1  " + o1.toFile().getName() + "; o2  " + o2.toFile().getName() + "; comp  "  + o1.toFile().getName().compareToIgnoreCase(o2.toFile().getName()));
+            return o1.toFile().getName().compareToIgnoreCase(o2.toFile().getName());
+        }
+    };
+
 
     /*  private void walkByPath2(Path path, StringBuilder builder) {
         //https://habr.com/ru/post/437694/
